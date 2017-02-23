@@ -4,6 +4,25 @@
 #include <vector>
 using namespace std;
 
+<<<<<<< HEAD
+=======
+
+
+class point{
+public:
+float x;
+float y;
+bool operator==(const point& A){return((A.x==x)&&(A.y==y));}	
+};
+/*---------------------------------------------------------------*/
+class obstacle{
+public:
+int n_sommets; //nombre de sommets
+vector<point> sommets;
+}; //fin classe obstacle
+
+
+>>>>>>> 595e98043ddef0044e19f5d1a65f2893293ed9fb
 /**************************************************************************************************/
 
 
