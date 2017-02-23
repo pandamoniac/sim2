@@ -10,6 +10,7 @@ class point{
 public:
 float x;
 float y;
+bool operator==(const point& A){return((A.x==x)&&(A.y==y));}	
 };
 /*---------------------------------------------------------------*/
 class obstacle{
