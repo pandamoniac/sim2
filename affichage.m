@@ -7,7 +7,7 @@ celldisp(c) ;
 sommetsX = c{1};
 sommetsY = c{3};
 
-%%%Lecture et affichage des obstacles un par un%%%
+%%%Lecture et affichage des obstacles un par un (0K)%%%
 frewind(fileID); %On revient au début du fichier
 ligne = fgetl(fileID); 
 hold on ;
