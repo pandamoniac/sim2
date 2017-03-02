@@ -4,7 +4,7 @@
 #include <vector>
 using namespace std;
 
-//my part starts from LINE 138.
+//my part starts from LINE 128.
 
 class point {
 public:
@@ -125,16 +125,6 @@ void lecture_obstacles(char* path, vector<obstacle>& V_obs, int& N) {
 
 
 
-
-
-
-
-
-
-
-//my part starts from here
-
-
 bool directly_reachable(point A, point B, obstacle& obs)	//Si l'obstacle obs bloque le segment AB
 {
 	for (int i = 0; i < obs.n_sommets - 1; i++)
@@ -158,8 +148,36 @@ bool directly_reachable(point A, point B, vector<obstacle>& V_obs, int N) //Si l
 
 }
 
+double cross_prod(const point A, const point B, const point C)//calcul the cross product
+{
+	double vec_1x = A.x - B.x;
+	double vec_2x = C.x - B.x;
+	double vec_1y = A.y - B.y;
+	double vec_2y = C.y - B.y;
+	return vec_1x * vec_2y - vec_2x * vec_1y;
+}
+
+bool superior_angle(const point A, const point B, const point C) // judge whether the angle is bigger than 180 degree.
+{
+	if (cross_prod(A, B, C) < 0)
+		return true;
+	else
+		return false;
+}
+
+bool in(const point A, const point B, const point C, const point D)//judge whether BD is in the polygon.
+{
+	if (superior_angle(A, B, D) && superior_angle(D, B, C))
+		return true;
+	else
+		return false;
+}
+
+
+
+
 #define INFINITY 1e10;
-struct vertax_mapping	//Pour lier le sommet dans la matrice de distance et le sommet de quelle obstacle
+struct vertex_mapping	//Pour lier le sommet dans la matrice de distance et le sommet de quelle obstacle
 {
 	int obstacle_number;
 	int point_number;
@@ -170,14 +188,13 @@ class distance_matrix	//Enregistrer l'information de distance
 public:
 	double** matrix;	//La matrice de distance
 	int nombre_sommet;	//le nombre de sommet
-	vector<vertax_mapping> vertice;	//Pour lier le sommet dans la matrice de distance et le sommet de quelle obstacle
+	vector<vertex_mapping> vertice;	//Pour lier le sommet dans la matrice de distance et le sommet de quelle obstacle
 
 	distance_matrix(vector<obstacle>& V_obs, int N);	//Construire la matrice
 	void display();
 	void display_vertax_mapping();
 	~distance_matrix();
 };
-
 
 distance_matrix::distance_matrix(vector<obstacle>& V_obs, int N)
 {
@@ -193,14 +210,16 @@ distance_matrix::distance_matrix(vector<obstacle>& V_obs, int N)
 	}
 	int obstacle_count = 0;
 	int point_count = 0;
-	vertax_mapping temp_vertax;
+
+
+	vertex_mapping temp_vertex;
 	for (int i = 0; i < nombre_sommet; )	//Construire le lien entre les sommets de matrice et les sommets des obstacles
 	{
 		if (point_count < V_obs[obstacle_count].n_sommets)
 		{
-			temp_vertax.obstacle_number = obstacle_count;
-			temp_vertax.point_number = point_count;
-			vertice.push_back(temp_vertax);
+			temp_vertex.obstacle_number = obstacle_count;
+			temp_vertex.point_number = point_count;
+			vertice.push_back(temp_vertex);
 			point_count++;
 			i++;
 		}
@@ -211,15 +230,17 @@ distance_matrix::distance_matrix(vector<obstacle>& V_obs, int N)
 		}
 	}
 
+
 	display_vertax_mapping();	//Seulement pour debugging
+
+
+
 
 	double delta_x, delta_y;
 	for (int i = 0; i < nombre_sommet; i++)	//Calculer la matrice
 	{
 		for (int j = 0; j < nombre_sommet; j++)
 		{
-
-
 			if (directly_reachable(V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number], V_obs[vertice[j].obstacle_number].sommets[vertice[j].point_number], V_obs, N))
 				//Si les deux points peuvent li¨¦s sans traverser les bords des obstacles
 			{
@@ -231,7 +252,48 @@ distance_matrix::distance_matrix(vector<obstacle>& V_obs, int N)
 				matrix[i][j] = INFINITY + 1;
 		}
 	}
+
+
+
+
+	for (int i = 0; i < N; i++)	//Compter les sommets
+	{
+		int nom = 0;
+
+
+		for (int j = 1; j < V_obs[i].n_sommets - 1; j++)
+		{
+			int nom_j = nom + j;
+			for (int k = 0; k < V_obs[i].n_sommets; k++)
+			{
+				int nom_k = nom + k;
+				if (in(V_obs[vertice[nom_j - 1].obstacle_number].sommets[vertice[nom_j - 1].point_number], V_obs[vertice[nom_j].obstacle_number].sommets[vertice[nom_j].point_number], V_obs[vertice[nom_j + 1].obstacle_number].sommets[vertice[nom_j + 1].point_number], V_obs[vertice[nom_k].obstacle_number].sommets[vertice[nom_k].point_number]))
+					matrix[nom_j][nom_k] = INFINITY + 1;
+				//
+			}
+
+		}
+	
+		
+
+		for (int h = 0; h < V_obs[i].n_sommets; h++)
+		{
+			int nom_h = nom + h;
+			if (in(V_obs[vertice[nom + V_obs[i].n_sommets - 1].obstacle_number].sommets[vertice[nom + V_obs[i].n_sommets - 1].point_number], V_obs[vertice[nom].obstacle_number].sommets[vertice[nom].point_number], V_obs[vertice[nom + 1].obstacle_number].sommets[vertice[nom + 1].point_number], V_obs[vertice[nom_h].obstacle_number].sommets[vertice[nom_h].point_number]))
+				matrix[nom][nom_h] = INFINITY + 1;
+		
+			if (in(V_obs[vertice[nom + V_obs[i].n_sommets - 2].obstacle_number].sommets[vertice[nom + V_obs[i].n_sommets - 2].point_number], V_obs[vertice[nom+ V_obs[i].n_sommets - 1].obstacle_number].sommets[vertice[nom + V_obs[i].n_sommets - 1].point_number], V_obs[vertice[nom].obstacle_number].sommets[vertice[nom].point_number], V_obs[vertice[nom_h].obstacle_number].sommets[vertice[nom_h].point_number]))
+			
+				matrix[nom][nom_h] = INFINITY + 1;
+		}
+		
+		nom += V_obs[i].n_sommets - 1;
+		
+	}
+	
 }
+
+
 
 void distance_matrix::display()
 {
@@ -239,6 +301,7 @@ void distance_matrix::display()
 	{
 		for (int j = 0; j < nombre_sommet; j++)
 		{
+			
 			cout << matrix[i][j] << "\t";
 		}
 		cout << endl;
@@ -253,12 +316,44 @@ void distance_matrix::display_vertax_mapping()
 	}
 }
 
-distance_matrix::~distance_matrix() {
+
+
+
+distance_matrix::~distance_matrix()
+{
 	for (int i = 0; i < nombre_sommet; i++)
 	{
 		delete[] matrix[i];
 	}
 	delete[] matrix;
+}
+
+
+
+int main() {
+	//test de la fonction intersection_segments
+	cout << intersection_segments(0, 3, 2, 3, 0, 1, 2, 1) << endl;
+	cout << intersection_segments(3, 2, 5, 5, 5, 3, 7, 3) << endl;
+	cout << intersection_segments(3.0, 2.0, 5.0, 5.0, 3.0, 3.0, 7.0, 3.0) << endl;
+	cout << intersection_segments(6.0, 1.0, 6.0, 3.0, 4.0, 2.0, 7.0, 2.0) << endl;
+	cout << intersection_segments(1.0, 1.0, 3.0, 3.0, 2.0, 2.0, 1.0, 3.0) << endl;
+	cout << "Test ! ! ! : " << intersection_segments(1, 1, 4, 1, 2, 1, 3, 1) << endl;
+	//test de la fonction lecture
+	char test_path[] = "obstacles.txt";
+	int N = 0;
+	vector<obstacle> V_obs;
+	lecture_obstacles(test_path, V_obs, N);
+	cout << N << endl;
+	/*cout << V_obs[6].n_sommets << " , " << V_obs[6].sommets[3].x << "  " << V_obs[6].sommets[3].y << endl;*/
+	system("pause");
+
+
+	distance_matrix dist_matrix(V_obs, N);
+	dist_matrix.display();	//Seulement pour debugging
+
+
+	system("pause");
+	return(0);
 }
 
 
