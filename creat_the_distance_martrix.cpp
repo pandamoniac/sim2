@@ -4,32 +4,19 @@
 #include <vector>
 using namespace std;
 
-//my part starts from LINE 128.
+
 
 class point {
 public:
 	float x;
 	float y;
+	bool operator==(const point& A) { return((A.x == x) && (A.y == y)); }
 };
 /*---------------------------------------------------------------*/
 class obstacle {
 public:
 	int n_sommets; //nombre de sommets
 	vector<point> sommets;
-
-
-	//point* sommets=new point[n_sommet];
-	//void create_from_stack(stack<point>,int);
-
-
-	ostream& operator<<(ostream& flux) {
-		flux << "nombre de sommets de l'obstacle est" << n_sommets << "qui sont :" << endl;
-		for (int i = 0; i<n_sommets; i++) { flux << "point num " << i << " : " << "x = " << sommets[i].x << ", y = " << sommets[i].y << endl; }
-		return(flux);
-	}
-
-
-
 }; //fin classe obstacle
 
 
@@ -39,6 +26,8 @@ public:
 float min(float x, float y) {
 	if (x<y) return(x); else return(y);
 }
+
+
 
 float max(float x, float y) {
 	if (x>y) return(x); else return(y);
@@ -50,31 +39,33 @@ float max(float x, float y) {
 float* equation_droite(float xa, float ya, float xb, float yb) { //passant par deux points A et B, sous la forme ax+by+c=0
 
 	float* E = new float[3];
-	E[0] = yb - ya; //coefficiant a
-	E[1] = xa - xb; //coefficiant b
-	E[2] = ya*xb - xa*yb; //coefficiant c
+	E[0] = yb - ya; //coefficient a
+	E[1] = xa - xb; //coefficient b
+	E[2] = ya*xb - xa*yb; //coefficient c
 	return(E);
 }
 
 bool point_in_segment(point A, point B, point C) { //retourne true si C dans [AB], false sinon
 	return((C.x <= max(A.x, B.x)) && (C.x >= min(A.x, B.x)) && (C.y <= max(A.y, B.y)) && (C.y >= min(A.y, B.y)));
-
-
 }
 
-bool intersection_segments(float xa1, float ya1, float xb1, float yb1, float xa2, float ya2, float xb2, float yb2) { //[A1,B1] et [A2,B2]
-	float* E1 = equation_droite(xa1, ya1, xb1, yb1);
-	float* E2 = equation_droite(xa2, ya2, xb2, yb2);
+
+
+
+bool intersection_segments(point A1, point B1, point A2, point B2) { //[A1,B1] et [A2,B2]
+	float* E1 = equation_droite(A1.x, A1.y, B1.x, B1.y);
+	float* E2 = equation_droite(A2.x, A2.y, B2.x, B2.y);
 
 	if ((E1[0] * E2[1] - E2[0] * E1[1] == 0) || (E1[1] * E2[0] - E2[1] * E1[0] == 0)) {
 		/*if( (x<=max(xa1,xb1)) && (x>=min(xa1,xb1)) && (y<=max(ya1,yb1)) && (y>=min(ya1,yb1)) || )*/ return(false);
 	}
 	else {
-		float x = (E1[1] * E2[2] - E2[1] * E1[2]) / (E1[0] * E2[1] - E2[0] * E1[1]); // coordonn¨¦es pt d'intersection
-		float y = (E2[2] * E1[0] - E2[0] * E1[2]) / (E1[1] * E2[0] - E2[1] * E1[0]); // coordonn¨¦es pt d'intersection
-		if ((x <= max(xa1, xb1)) && (x >= min(xa1, xb1)) && (y <= max(ya1, yb1)) && (y >= min(ya1, yb1)) && (x <= max(xa2, xb2)) && (x >= min(xa2, xb2)) && (y <= max(ya2, yb2)) && (y >= min(ya2, yb2))) {
+		point int_point; //point intersection entre les deux segments
+		int_point.x = (E1[1] * E2[2] - E2[1] * E1[2]) / (E1[0] * E2[1] - E2[0] * E1[1]); // coordonnées pt d'intersection
+		int_point.y = (E2[2] * E1[0] - E2[0] * E1[2]) / (E1[1] * E2[0] - E2[1] * E1[0]); // coordonnées pt d'intersection
+		if ((point_in_segment(A1, B1, int_point)) && (point_in_segment(A2, B2, int_point))) {
 
-			if (((x == xa1) && (y == ya1)) || ((x == xa2) && (y == ya2)) || ((x == xb1) && (y == yb1)) || ((x == xb2) && (y == yb2))) return(false); else return(true);
+			if ((int_point == A1) || (int_point == A2) || (int_point == B1) || (int_point == B2)) return(false); else return(true);
 		}
 		else return(false);
 
@@ -108,15 +99,26 @@ void lecture_obstacles(char* path, vector<obstacle>& V_obs, int& N) {
 
 } //end lecture
 
-  /*
-  void affichage_obstacles(vector<obstacle> V_obs,int N){
-  for(int i=0;i<N;i++){
-  cout<<V_obs[i];
-  }//fin boucle for
+point point_dep() {
+	point p_dep;
+	cout << "Donner les coordonnées du point de départ : " << endl;
+	cout << "x= ";
+	cin >> p_dep.x;
+	cout << "y= ";
+	cin >> p_dep.y;
+	return (p_dep);
+}
 
-  }
+point point_arr() {
+	point p_arr;
+	cout << "Donner les coordonnées du point d'arrivée : " << endl;
+	cout << "x= ";
+	cin >> p_arr.x;
+	cout << "y= ";
+	cin >> p_arr.y;
+	return (p_arr);
+}
 
-  */
 
 
 
@@ -124,15 +126,37 @@ void lecture_obstacles(char* path, vector<obstacle>& V_obs, int& N) {
 
 
 
+bool intersection_new(point A1, point B1, point A2, point B2) { //for judge the diagonal cross the polygon 
+	float* E1 = equation_droite(A1.x, A1.y, B1.x, B1.y);
+	float* E2 = equation_droite(A2.x, A2.y, B2.x, B2.y);
+
+	if ((E1[0] * E2[1] - E2[0] * E1[1] == 0) || (E1[1] * E2[0] - E2[1] * E1[0] == 0)) {
+		/*if( (x<=max(xa1,xb1)) && (x>=min(xa1,xb1)) && (y<=max(ya1,yb1)) && (y>=min(ya1,yb1)) || )*/ return(false);
+	}
+	else {
+		point int_point; //point intersection entre les deux segments
+		int_point.x = (E1[1] * E2[2] - E2[1] * E1[2]) / (E1[0] * E2[1] - E2[0] * E1[1]); // coordonnées pt d'intersection
+		int_point.y = (E2[2] * E1[0] - E2[0] * E1[2]) / (E1[1] * E2[0] - E2[1] * E1[0]); // coordonnées pt d'intersection
+		if ((point_in_segment(A1, B1, int_point)) && (point_in_segment(A2, B2, int_point))) {
+			if ((int_point == A1 && int_point == A2) || (int_point == A1 && int_point == B2) || (int_point == A2 && int_point == B1) || (int_point == B1 && int_point == B2)) return(false); else return(true);
+		}
+		else return(false);
+
+	}
+
+}
 
 bool directly_reachable(point A, point B, obstacle& obs)	//Si l'obstacle obs bloque le segment AB
 {
 	for (int i = 0; i < obs.n_sommets - 1; i++)
 	{
-		if (intersection_segments(A.x, A.y, B.x, B.y, obs.sommets[i].x, obs.sommets[i].y, obs.sommets[i + 1].x, obs.sommets[i + 1].y))
+		if (intersection_new(A, B, obs.sommets[i], obs.sommets[i + 1]))
+		{
 			return false;
+		}
 	}
-	if (intersection_segments(A.x, A.y, B.x, B.y, obs.sommets[obs.n_sommets - 1].x, obs.sommets[obs.n_sommets - 1].y, obs.sommets[0].x, obs.sommets[0].y))
+	if (intersection_new(A, B, obs.sommets[obs.n_sommets - 1], obs.sommets[0]))
+
 		return false;
 	return true;
 }
@@ -148,6 +172,15 @@ bool directly_reachable(point A, point B, vector<obstacle>& V_obs, int N) //Si l
 
 }
 
+double point_prod(const point A, const point B, const point C)//calcul the scalar product
+{
+	double vec_1x = A.x - B.x;
+	double vec_2x = C.x - B.x;
+	double vec_1y = A.y - B.y;
+	double vec_2y = C.y - B.y;
+	return vec_1x * vec_2x + vec_1y * vec_2y;
+}
+
 double cross_prod(const point A, const point B, const point C)//calcul the cross product
 {
 	double vec_1x = A.x - B.x;
@@ -157,21 +190,37 @@ double cross_prod(const point A, const point B, const point C)//calcul the cross
 	return vec_1x * vec_2y - vec_2x * vec_1y;
 }
 
+double norm(const point A, const point B)//calcul the norm
+{
+	double vec_x = A.x - B.x;
+	double vec_y = A.y - B.y;
+	return sqrt(vec_x*vec_x + vec_y*vec_y);
+}
+
 bool superior_angle(const point A, const point B, const point C) // judge whether the angle is bigger than 180 degree.
 {
 	if (cross_prod(A, B, C) < 0)
 		return true;
-	else
-		return false;
+	return false;
 }
+
 
 bool in(const point A, const point B, const point C, const point D)//judge whether BD is in the polygon.
 {
 	if (superior_angle(A, B, D) && superior_angle(D, B, C))
 		return true;
-	else
+	else if (!superior_angle(A, B, C))
+	{
+		double alpha = acos(point_prod(A, B, D) / norm(A, B) / norm(D, B));
+		double beta = acos(point_prod(D, B, C) / norm(D, B) / norm(C, B));
+		double gamma = acos(point_prod(A, B, C) / norm(A, B) / norm(C, B));
+		if ((alpha == beta + gamma) || (beta == alpha + gamma))
+			return true;
 		return false;
+	}
+	return false;
 }
+
 
 
 
@@ -188,25 +237,28 @@ class distance_matrix	//Enregistrer l'information de distance
 public:
 	double** matrix;	//La matrice de distance
 	int nombre_sommet;	//le nombre de sommet
+	int nb_matrix;
 	vector<vertex_mapping> vertice;	//Pour lier le sommet dans la matrice de distance et le sommet de quelle obstacle
 
-	distance_matrix(vector<obstacle>& V_obs, int N);	//Construire la matrice
+	distance_matrix(point p_dep, point p_arr, vector<obstacle>& V_obs, int N);	//Construire la matrice
 	void display();
 	void display_vertax_mapping();
 	~distance_matrix();
 };
 
-distance_matrix::distance_matrix(vector<obstacle>& V_obs, int N)
+distance_matrix::distance_matrix(point p_dep, point p_arr, vector<obstacle>& V_obs, int N)
 {
 	nombre_sommet = 0;
 	for (int i = 0; i < N; i++)	//Compter les sommets
 	{
 		nombre_sommet += V_obs[i].n_sommets;
 	}
-	matrix = new double*[nombre_sommet];	//Creer l'assembl¨¦e de 2D
-	for (int i = 0; i < nombre_sommet; i++)
+	nb_matrix = nombre_sommet + 2;
+	matrix = new double*[nb_matrix];
+	//Creer l'assemblé  de 2D
+	for (int i = 0; i <nb_matrix; i++)
 	{
-		matrix[i] = new double[nombre_sommet];
+		matrix[i] = new double[nb_matrix];
 	}
 	int obstacle_count = 0;
 	int point_count = 0;
@@ -233,34 +285,62 @@ distance_matrix::distance_matrix(vector<obstacle>& V_obs, int N)
 
 	display_vertax_mapping();	//Seulement pour debugging
 
-
-
-
 	double delta_x, delta_y;
+	for (int i = 0; i < nombre_sommet; i++)
+	{
+		if (directly_reachable(p_dep, V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number], V_obs, N))
+		{
+			delta_x = p_dep.x - V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number].x;
+			delta_y = p_dep.y - V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number].y;
+			matrix[0][i + 1] = sqrt(delta_x*delta_x + delta_y*delta_y);
+		}
+		else matrix[0][i + 1] = INFINITY + 1;
+	}
+	if (directly_reachable(p_dep, p_arr, V_obs, N))
+	{
+		matrix[0][nb_matrix - 1] = sqrt((p_dep.x - p_arr.x)*(p_dep.x - p_arr.x) + (p_arr.x - p_arr.y)*(p_arr.x - p_arr.y));
+	}
+	else matrix[0][nb_matrix - 1] = INFINITY + 1;
+	matrix[0][0] = 0;
+	for (int i = 0; i < nb_matrix; i++)
+	{
+		matrix[i][0] = matrix[0][i];
+	}
+
+	for (int i = 0; i < nombre_sommet; i++)
+	{
+		if (directly_reachable(p_arr, V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number], V_obs, N))
+		{
+			delta_x = p_arr.x - V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number].x;
+			delta_y = p_arr.y - V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number].y;
+			matrix[nb_matrix - 1][i + 1] = sqrt(delta_x*delta_x + delta_y*delta_y);
+		}
+		else matrix[nb_matrix - 1][i + 1] = INFINITY + 1;
+	}
+
+	matrix[nb_matrix - 1][nb_matrix - 1] = 0;
+	for (int i = 0; i < nb_matrix; i++)
+		matrix[i][nb_matrix - 1] = matrix[nb_matrix - 1][i];
+
 	for (int i = 0; i < nombre_sommet; i++)	//Calculer la matrice
 	{
 		for (int j = 0; j < nombre_sommet; j++)
 		{
 			if (directly_reachable(V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number], V_obs[vertice[j].obstacle_number].sommets[vertice[j].point_number], V_obs, N))
-				//Si les deux points peuvent li¨¦s sans traverser les bords des obstacles
+				//Si les deux points peuvent lient sans traverser les bords des obstacles
 			{
 				delta_x = V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number].x - V_obs[vertice[j].obstacle_number].sommets[vertice[j].point_number].x;
 				delta_y = V_obs[vertice[i].obstacle_number].sommets[vertice[i].point_number].y - V_obs[vertice[j].obstacle_number].sommets[vertice[j].point_number].y;
-				matrix[i][j] = sqrt(delta_x*delta_x + delta_y*delta_y);
+				matrix[i + 1][j + 1] = sqrt(delta_x*delta_x + delta_y*delta_y);
 			}
 			else
-				matrix[i][j] = INFINITY + 1;
+				matrix[i + 1][j + 1] = INFINITY + 1;
 		}
 	}
 
-
-
-
-	for (int i = 0; i < N; i++)	//Compter les sommets
+	for (int i = 0; i < N; i++)
 	{
 		int nom = 0;
-
-
 		for (int j = 1; j < V_obs[i].n_sommets - 1; j++)
 		{
 			int nom_j = nom + j;
@@ -268,41 +348,36 @@ distance_matrix::distance_matrix(vector<obstacle>& V_obs, int N)
 			{
 				int nom_k = nom + k;
 				if (in(V_obs[vertice[nom_j - 1].obstacle_number].sommets[vertice[nom_j - 1].point_number], V_obs[vertice[nom_j].obstacle_number].sommets[vertice[nom_j].point_number], V_obs[vertice[nom_j + 1].obstacle_number].sommets[vertice[nom_j + 1].point_number], V_obs[vertice[nom_k].obstacle_number].sommets[vertice[nom_k].point_number]))
-					matrix[nom_j][nom_k] = INFINITY + 1;
-				//
+					matrix[nom_j + 1][nom_k + 1] = INFINITY + 1;
 			}
-
 		}
-	
-		
+
+
 
 		for (int h = 0; h < V_obs[i].n_sommets; h++)
 		{
 			int nom_h = nom + h;
 			if (in(V_obs[vertice[nom + V_obs[i].n_sommets - 1].obstacle_number].sommets[vertice[nom + V_obs[i].n_sommets - 1].point_number], V_obs[vertice[nom].obstacle_number].sommets[vertice[nom].point_number], V_obs[vertice[nom + 1].obstacle_number].sommets[vertice[nom + 1].point_number], V_obs[vertice[nom_h].obstacle_number].sommets[vertice[nom_h].point_number]))
-				matrix[nom][nom_h] = INFINITY + 1;
-		
-			if (in(V_obs[vertice[nom + V_obs[i].n_sommets - 2].obstacle_number].sommets[vertice[nom + V_obs[i].n_sommets - 2].point_number], V_obs[vertice[nom+ V_obs[i].n_sommets - 1].obstacle_number].sommets[vertice[nom + V_obs[i].n_sommets - 1].point_number], V_obs[vertice[nom].obstacle_number].sommets[vertice[nom].point_number], V_obs[vertice[nom_h].obstacle_number].sommets[vertice[nom_h].point_number]))
-			
-				matrix[nom][nom_h] = INFINITY + 1;
+				matrix[nom + 1][nom_h + 1] = INFINITY + 1;
+			if (in(V_obs[vertice[nom + V_obs[i].n_sommets - 2].obstacle_number].sommets[vertice[nom + V_obs[i].n_sommets - 2].point_number], V_obs[vertice[nom + V_obs[i].n_sommets - 1].obstacle_number].sommets[vertice[nom + V_obs[i].n_sommets - 1].point_number], V_obs[vertice[nom].obstacle_number].sommets[vertice[nom].point_number], V_obs[vertice[nom_h].obstacle_number].sommets[vertice[nom_h].point_number]))
+
+				matrix[nom + V_obs[i].n_sommets][nom_h + 1] = INFINITY + 1;
 		}
-		
 		nom += V_obs[i].n_sommets - 1;
-		
 	}
-	
 }
 
 
 
 void distance_matrix::display()
 {
-	for (int i = 0; i < nombre_sommet; i++)
+	for (int i = 0; i < nb_matrix; i++)
 	{
-		for (int j = 0; j < nombre_sommet; j++)
+		for (int j = 0; j < nb_matrix; j++)
 		{
-			
+
 			cout << matrix[i][j] << "\t";
+
 		}
 		cout << endl;
 	}
@@ -321,7 +396,7 @@ void distance_matrix::display_vertax_mapping()
 
 distance_matrix::~distance_matrix()
 {
-	for (int i = 0; i < nombre_sommet; i++)
+	for (int i = 0; i < nb_matrix; i++)
 	{
 		delete[] matrix[i];
 	}
@@ -332,28 +407,39 @@ distance_matrix::~distance_matrix()
 
 int main() {
 	//test de la fonction intersection_segments
-	cout << intersection_segments(0, 3, 2, 3, 0, 1, 2, 1) << endl;
-	cout << intersection_segments(3, 2, 5, 5, 5, 3, 7, 3) << endl;
-	cout << intersection_segments(3.0, 2.0, 5.0, 5.0, 3.0, 3.0, 7.0, 3.0) << endl;
-	cout << intersection_segments(6.0, 1.0, 6.0, 3.0, 4.0, 2.0, 7.0, 2.0) << endl;
-	cout << intersection_segments(1.0, 1.0, 3.0, 3.0, 2.0, 2.0, 1.0, 3.0) << endl;
-	cout << "Test ! ! ! : " << intersection_segments(1, 1, 4, 1, 2, 1, 3, 1) << endl;
-	//test de la fonction lecture
+	point A1, B1, A2, B2;
+	A1.x = 1; A1.y = 1;
+	B1.x = 4; B1.y = 2;
+	A2.x = 3; A2.y = 1;
+	B2.x = 4; B2.y = 4;
+
+
+
+	cout << intersection_segments(A1, B1, A2, B2) << endl;
+
 	char test_path[] = "obstacles.txt";
 	int N = 0;
 	vector<obstacle> V_obs;
 	lecture_obstacles(test_path, V_obs, N);
 	cout << N << endl;
 	/*cout << V_obs[6].n_sommets << " , " << V_obs[6].sommets[3].x << "  " << V_obs[6].sommets[3].y << endl;*/
+	//Lecture point de depart point d'arrivée
+
+
+	point p_dep, p_arr;
+	p_dep = point_dep();
+	p_arr = point_arr();
+
+
+
 	system("pause");
 
 
-	distance_matrix dist_matrix(V_obs, N);
+	distance_matrix dist_matrix(p_dep, p_arr, V_obs, N);
 	dist_matrix.display();	//Seulement pour debugging
 
 
 	system("pause");
+
 	return(0);
 }
-
-
